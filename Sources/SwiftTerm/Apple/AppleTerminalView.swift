@@ -931,6 +931,12 @@ extension TerminalView {
     // It is also cheap, so should be called when new data has been posted or received.
     func queuePendingDisplay ()
     {
+        // Don't queue display updates while synchronized output is active.
+        // Updates will be triggered when the mode is disabled via synchronizedOutputDisabled().
+        if terminal.synchronizedOutput {
+            return
+        }
+
         // throttle
         if !pendingDisplay {
             let fps60 = 16670000

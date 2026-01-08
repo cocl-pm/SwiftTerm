@@ -1391,6 +1391,12 @@ open class TerminalView: UIScrollView, UITextInputTraits, UIKeyInput, UIScrollVi
         terminalDelegate?.bell (source: self)
     }
 
+    open func synchronizedOutputDisabled(source: Terminal) {
+        // Immediately update display when synchronized output ends
+        pendingDisplay = false
+        updateDisplay()
+    }
+
     open func selectionChanged(source: Terminal) {
         if pendingSelectionChanged {
             return

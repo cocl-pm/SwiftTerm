@@ -87,7 +87,12 @@ public protocol TerminalDelegate: AnyObject {
     /// This method is invoked when the buffer changes from Normal to Alternate, or Alternate to Normal
     /// The default implementation does nothing.
     func bufferActivated (source: Terminal)
-    
+
+    /// This method is invoked when synchronized output mode is disabled (CSI ?2026l).
+    /// The view should immediately refresh the display to show the completed frame.
+    /// The default implementation does nothing.
+    func synchronizedOutputDisabled (source: Terminal)
+
     /// Should raise the bell
     /// The default implementation does nothing.
     func bell (source: Terminal)
@@ -332,7 +337,12 @@ open class Terminal {
     /// Indicates that the application has toggled bracketed paste mode, which means that when content is pasted into
     /// the terminal, the content will be wrapped in "ESC [ 200 ~" to start, and "ESC [ 201 ~" to end.
     public private(set) var bracketedPasteMode: Bool = false
-    
+
+    /// Indicates that the application has enabled synchronized output mode (DEC mode 2026).
+    /// When enabled, the terminal view should defer display updates until the mode is disabled.
+    /// See: https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036
+    public private(set) var synchronizedOutput: Bool = false
+
     private var charset: [UInt8:String]? = nil
     var gcharset: Int = 0
     var reverseWraparound: Bool = false
@@ -718,7 +728,8 @@ open class Terminal {
         setInsertMode(false)
         setWraparound(true)
         bracketedPasteMode = false
-        
+        synchronizedOutput = false
+
         // charset'
         charset = nil
         gcharset = 0
@@ -2986,6 +2997,8 @@ open class Terminal {
                 // keyboard emulation mode: 1050, 1051, 1052, 1053, 1060, 1061
             case 2004:
                 res = bracketedPasteMode ? modeSet : modeReset
+            case 2026: // synchronized output
+                res = synchronizedOutput ? modeSet : modeReset
             default:
                 break
             }
@@ -3698,6 +3711,9 @@ open class Terminal {
             case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
                 bracketedPasteMode = false
                 break
+            case 2026: // synchronized output mode
+                synchronizedOutput = false
+                tdel?.synchronizedOutputDisabled(source: self)
             default:
                 log ("Unhandled DEC Private Mode Reset (DECRST) with \(par)")
                 break
@@ -3932,6 +3948,8 @@ open class Terminal {
             case 2004: // bracketed paste mode (https://cirw.in/blog/bracketed-paste)
                 // TODO: must implement bracketed paste mode
                 bracketedPasteMode = true
+            case 2026: // synchronized output mode
+                synchronizedOutput = true
             default:
                 log ("Unhandled DEC Private Mode Set (DECSET) with \(par)")
                 break;
@@ -5327,7 +5345,11 @@ public extension TerminalDelegate {
     func bufferActivated(source: Terminal) {
         // nothing
     }
-    
+
+    func synchronizedOutputDisabled(source: Terminal) {
+        // nothing
+    }
+
     func windowCommand(source: Terminal, command: Terminal.WindowManipulationCommand) -> [UInt8]? {
         // no special handling
         return nil
