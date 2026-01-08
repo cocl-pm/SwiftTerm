@@ -137,13 +137,17 @@ extension TerminalView {
         }
         return false
     }
-    
+
+    /// Multiplier for font leading (0.0-1.0). Set to 0 for seamless block character rendering.
+    /// Default is 1.0 (full leading). Can be configured by the host application.
+    public static var lineLeadingMultiplier: CGFloat = 1.0
+
     // Computes the font dimensions once font.normal has been set
     func computeFontDimensions () -> CellDimension
     {
         let lineAscent = CTFontGetAscent (fontSet.normal)
         let lineDescent = CTFontGetDescent (fontSet.normal)
-        let lineLeading = CTFontGetLeading (fontSet.normal)
+        let lineLeading = CTFontGetLeading (fontSet.normal) * Self.lineLeadingMultiplier
         let cellHeight = ceil(lineAscent + lineDescent + lineLeading)
         #if os(macOS)
         // The following is a more robust way of getting the largest ascii character width, but comes with a performance hit.
