@@ -255,6 +255,11 @@ open class TerminalView: UIScrollView, UITextInputTraits, UIKeyInput, UIScrollVi
     
     @objc
     func step(displaylink: CADisplayLink) {
+        // Don't update display while synchronized output is active.
+        // Updates will be triggered when the mode is disabled via synchronizedOutputDisabled().
+        if terminal.synchronizedOutput {
+            return
+        }
         updateDisplay()
     }
 
