@@ -1106,12 +1106,13 @@ extension TerminalView {
     {
         search.invalidate()
         selection.active = false
-        startDisplayUpdates()
+        // Don't start display updates during feed - this prevents partial frames
+        // from being displayed mid-parse (e.g., before mode 2026 is enabled).
+        // Display will be updated via queuePendingDisplay() in feedFinish().
     }
-    
+
     func feedFinish ()
     {
-        suspendDisplayUpdates ()
         queuePendingDisplay()
     }
     
